@@ -34,46 +34,42 @@ yearInput.addEventListener('keypress', (e) => {
     }
 });
 
-// Limit input length
-dayInput.addEventListener('input', (e) => {
-    if (e.target.value.length > 2) {
-        e.target.value = e.target.value.slice(0, 2);
-    }
-});
 
-monthInput.addEventListener('input', (e) => {
-    if (e.target.value.length > 2) {
-        e.target.value = e.target.value.slice(0, 2);
-    }
-});
-
-yearInput.addEventListener('input', (e) => {
-    if (e.target.value.length > 4) {
-        e.target.value = e.target.value.slice(0, 4);
-    }
-});
 
 // Check date function
 function checkDate() {
-    const day = parseInt(dayInput.value);
-    const month = parseInt(monthInput.value);
-    const year = parseInt(yearInput.value);
+    // Helper to convert Arabic/Eastern numerals to English
+    const toEnglishDigits = (str) => {
+        return str.replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d));
+    }
+
+    // Get raw values
+    let dayVal = toEnglishDigits(dayInput.value.trim());
+    let monthVal = toEnglishDigits(monthInput.value.trim());
+    let yearVal = toEnglishDigits(yearInput.value.trim());
 
     // Hide error message first
     errorMessage.classList.remove('show');
 
-    // Validate inputs
-    if (!day || !month || !year) {
+    // Debugging (remove in production)
+    console.log(`Checking: Day=${dayVal}, Month=${monthVal}, Year=${yearVal}`);
+
+    // Simple validation (must not be empty)
+    if (!dayVal || !monthVal || !yearVal) {
         showError();
         return;
     }
 
-    // Check if date is correct
+    // Convert to numbers for comparison to handle leading zeros (e.g., "06" == 6)
+    const day = parseInt(dayVal, 10);
+    const month = parseInt(monthVal, 10);
+    const year = parseInt(yearVal, 10);
+
+    // Check against correct values
     if (day === CORRECT_DAY && month === CORRECT_MONTH && year === CORRECT_YEAR) {
-        // Correct date - show message
         unlockMessage();
     } else {
-        // Wrong date - show error
+        console.log('Wrong date entered');
         showError();
         shakeInputs();
     }
@@ -188,15 +184,22 @@ document.head.appendChild(confettiStyle);
 // Button click handler
 unlockBtn.addEventListener('click', checkDate);
 
-// Add input validation for numbers only
-[dayInput, monthInput, yearInput].forEach(input => {
-    input.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') return;
-        if (!/[0-9]/.test(e.key)) {
-            e.preventDefault();
+// Handle input sanitization (allow numbers only)
+function setupInput(input, maxLength) {
+    input.addEventListener('input', (e) => {
+        // Remove any non-numeric characters
+        e.target.value = e.target.value.replace(/[^0-9]/g, '');
+
+        // Limit length
+        if (e.target.value.length > maxLength) {
+            e.target.value = e.target.value.slice(0, maxLength);
         }
     });
-});
+}
+
+setupInput(dayInput, 2);
+setupInput(monthInput, 2);
+setupInput(yearInput, 4);
 
 // Add placeholder animation
 const inputs = [dayInput, monthInput, yearInput];
